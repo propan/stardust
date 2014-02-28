@@ -29,3 +29,7 @@
       (aset js/window "requestAnimationFrame" (partial raf-fn 0)))
     (when-not (.-cancelAnimationFrame js/window)
       (aset js/window "cancelAnimationFrame" js/clearTimeout))))
+
+(defn round
+  [x]
+  (/ (Math/ceil (* x 100)) 100))
