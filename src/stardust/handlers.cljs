@@ -11,13 +11,15 @@
   (update-in state [:ship property] #(if (= % from) to %)))
 
 (defn- handle-frame
-  [state data]
+  [state fps]
   (d/draw state context)
-  (t/tick state))
+  (-> state
+      (assoc :fps fps)
+      (t/tick)))
 
 (defn- gs-handle-keyboard
-  [state data]
-  (case data
+  [state event]
+  (case event
     :arrow-left-down  (change-ship-state state :rotate :none :left)
     :arrow-left-up    (change-ship-state state :rotate :left :none)
     :arrow-right-down (change-ship-state state :rotate :none :right)

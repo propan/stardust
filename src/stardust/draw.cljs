@@ -7,6 +7,14 @@
 ;; Helpers
 ;;
 
+(defn- fill-text
+  [context text x y font color]
+  (with-context [ctx context]
+    (doto ctx
+      (aset "font" font)
+      (aset "fillStyle" color)
+      (.fillText text x y))))
+
 (defn- draw-cached-image
   [context image x y rotation]
   (with-context [ctx context]
@@ -70,6 +78,7 @@
 
 (extend-type GameScreen
   Drawable
-  (draw [{:keys [width height ship]} context]
+  (draw [{:keys [width height ship fps]} context]
     (.clearRect context 0 0 width height)
+    (fill-text context (str fps " FPS") 10 20 "14px Helvetica" "#FFFFFF")
     (draw ship context)))
