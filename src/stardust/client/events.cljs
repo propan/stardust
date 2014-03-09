@@ -1,4 +1,4 @@
-(ns stardust.events
+(ns stardust.client.events
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a :refer [chan put!]]
             [goog.events :as events]

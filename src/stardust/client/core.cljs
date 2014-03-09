@@ -1,17 +1,16 @@
-(ns stardust.core
+(ns stardust.client.core
   (:require-macros [cljs.core.async.macros :refer [go]])
   (:require [cljs.core.async :as a :refer [<!]]
-            [stardust.events :refer [frames keyboard]]
-            [stardust.handlers :refer [handle]]
-            [stardust.models :refer [game-screen]]
-            [stardust.utils :as u]))
+            [stardust.client.events :refer [frames keyboard]]
+            [stardust.client.handlers :refer [handle]]
+            [stardust.client.utils :as u]))
 
 (enable-console-print!)
 
 (defn events-loop
   []
   (let [events (a/merge [(frames) (keyboard)])]
-    (go (loop [state (game-screen 1000 600)]
+    (go (loop [state (stardust.models.DeathMatchScreen. (stardust.models/player 0 500 300 100 1) [])] ;; TODO
           (recur (handle state (<! events)))))))
 
 (u/init-request-animation-frame)

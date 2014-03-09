@@ -1,21 +1,18 @@
-(ns stardust.handlers
+(ns stardust.client.handlers
   (:require [clojure.browser.dom :as dom]
-            [stardust.draw :as d]
-            [stardust.models :refer [GameScreen]]
-            [stardust.tick :as t]))
+            [stardust.client.draw :as d]
+            [stardust.models :refer [DeathMatchScreen]]))
 
 (def context (.getContext (dom/get-element "open-space") "2d"))
 
 (defn- change-ship-state
   [state property from to]
-  (update-in state [:ship property] #(if (= % from) to %)))
+  (update-in state [:player property] #(if (= % from) to %)))
 
 (defn- handle-frame
   [state fps]
   (d/draw state context)
-  (-> state
-      (assoc :fps fps)
-      (t/tick)))
+  (assoc state :fps fps))
 
 (defn- gs-handle-keyboard
   [state event]
@@ -35,7 +32,7 @@
 (defprotocol Handler
   (handle [_ event]))
 
-(extend-type GameScreen
+(extend-type DeathMatchScreen
   Handler
   (handle [state [source data]]
     (case source

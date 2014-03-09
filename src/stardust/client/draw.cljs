@@ -1,7 +1,8 @@
-(ns stardust.draw
-  (:require-macros [stardust.macros :refer [with-context]])
+(ns stardust.client.draw
+  (:require-macros [stardust.client.macros :refer [with-context]])
   (:require [stardust.constants :as C]
-            [stardust.models :refer [CachedImage Ship GameScreen]]))
+            [stardust.client.constants :as CC]
+            [stardust.models :refer [Player Ship DeathMatchScreen]]))
 
 ;;
 ;; Helpers
@@ -27,10 +28,12 @@
 ;; Pre-generated images
 ;;
 
+(deftype CachedImage [offset-x offset-y data])
+
 (defn- generate-ship-image
   [buffer color]
-  (let [image-width  (+ 20 (* 2 C/SHADOW_BLUR))
-        image-height (+ 25 (* 2 C/SHADOW_BLUR))
+  (let [image-width  (+ 20 (* 2 CC/SHADOW_BLUR))
+        image-height (+ 25 (* 2 CC/SHADOW_BLUR))
         middle-x     (/ image-width 2)
         middle-y     (/ image-width 2)
         image        (js/Image.)]
@@ -38,7 +41,7 @@
     (set! (.-height buffer) image-height)
     (with-context [ctx (.getContext buffer "2d")]
       (doto ctx
-        (aset "shadowBlur" C/SHADOW_BLUR)
+        (aset "shadowBlur" CC/SHADOW_BLUR)
         (aset "shadowColor" color)
         (aset "strokeStyle" color)
         (aset "lineWidth" 2.5)
@@ -61,7 +64,7 @@
 (def ship-images
   (let [buffer (.createElement js/document "canvas")]
     (into-array (for [type (range 0 6)]
-                  (generate-ship-image buffer (get C/SHIP_COLORS type))))))
+                  (generate-ship-image buffer (get CC/SHIP_COLORS type))))))
 
 ;;
 ;; Drawable Protocol
@@ -72,13 +75,19 @@
 
 (extend-type Ship
   Drawable
-  (draw [{:keys [x y rotation immunity type]} context]
+  (draw [{:keys [x y rotation immunity color]} context]
     (with-context [ctx context]
-      (draw-cached-image ctx (aget ship-images type) x y rotation))))
+      (draw-cached-image ctx (aget ship-images color) x y rotation))))
 
-(extend-type GameScreen
+(extend-type Player
   Drawable
-  (draw [{:keys [width height ship fps]} context]
-    (.clearRect context 0 0 width height)
+  (draw [{:keys [x y rotation immunity color]} context]
+    (with-context [ctx context]
+      (draw-cached-image ctx (aget ship-images color) x y rotation))))
+
+(extend-type DeathMatchScreen
+  Drawable
+  (draw [{:keys [player fps ships]} context]
+    (.clearRect context 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
     (fill-text context (str fps " FPS") 10 20 "14px Helvetica" "#FFFFFF")
-    (draw ship context)))
+    (draw player context)))

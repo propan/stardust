@@ -1,4 +1,4 @@
-(ns stardust.macros)
+(ns stardust.client.macros)
 
 (defmacro with-context
   [bindings & body]
