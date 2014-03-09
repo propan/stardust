@@ -1,6 +1,8 @@
 (ns stardust.client.handlers
   (:require [clojure.browser.dom :as dom]
+            [cljs.core.async :refer [put!]]
             [stardust.client.draw :as d]
+            [stardust.protocols :refer [Handler]]
             [stardust.models :refer [DeathMatchScreen]]))
 
 (def context (.getContext (dom/get-element "open-space") "2d"))
@@ -25,17 +27,24 @@
     :arrow-up-up      (change-ship-state state :accelerate true false)
     state))
 
-;;
-;; Handler Protocol
-;;
+(defn- dms-handle-keyboard
+  [state event]
+  (put! (:out-channel state) event)
+  state)
 
-(defprotocol Handler
-  (handle [_ event]))
+(defn handle-socket
+  [{:keys [out-channel fps] :as state} [event data]]
+  (if (= event :message)
+    (merge data {:fps         fps
+                 :out-channel out-channel})
+    state))
 
 (extend-type DeathMatchScreen
   Handler
-  (handle [state [source data]]
-    (case source
-      :frame    (handle-frame state data)
-      :keyboard (gs-handle-keyboard state data)
-      state)))
+  (handle [state event]
+    (let [[source data] event]
+      (case source
+        :frame    (handle-frame state data)
+        :keyboard (dms-handle-keyboard state event)
+        :socket   (handle-socket state data)
+        state))))

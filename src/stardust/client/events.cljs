@@ -1,8 +1,14 @@
 (ns stardust.client.events
   (:require-macros [cljs.core.async.macros :refer [go]])
-  (:require [cljs.core.async :as a :refer [chan put!]]
+  (:require [cljs.core.async :as a :refer [chan put! <!]]
+            [cljs.reader :as reader]
             [goog.events :as events]
+            [goog.net.WebSocket]
+            [goog.net.WebSocket.EventType :as TYPE]
             [stardust.utils :refer [round]]))
+
+(cljs.reader/register-tag-parser!  "stardust.models.DeathMatchScreen" stardust.models/map->DeathMatchScreen)
+(cljs.reader/register-tag-parser!  "stardust.models.Player" stardust.models/map->Player)
 
 (def ARROW_LEFT 37)
 (def ARROW_UP 38)
@@ -44,3 +50,30 @@
         now (.getTime (js/Date.))]
     (animation-frame-loop out now now)
     out))
+
+(defn- safe-read-string
+  [str]
+  (try
+    (reader/read-string (reader/read-string str)) ;; TODO: WTF?  
+    (catch :default e nil)))
+
+(defn websocket
+  [url]
+  (let [ws  (goog.net.WebSocket.)
+        in  (chan)
+        out (chan)]
+    (events/listen ws TYPE/OPENED  (fn [e]
+                                     (put! in [:socket [:opened e]])))
+    (events/listen ws TYPE/CLOSED  (fn [e]
+                                     (put! in [:socket [:closed e]])))
+    (events/listen ws TYPE/MESSAGE (fn [e]
+                                     (when-let [event (safe-read-string (.-message e))]
+                                       (put! in [:socket [:message event]]))))
+    (events/listen ws TYPE/ERROR   (fn [e]
+                                     (put! in [:socket [:error e]])))
+    (.open ws url)
+    (go (loop [msg (<! out)]
+          (when msg
+            (.send ws msg)
+            (recur (<! out)))))
+    {:in in :out out}))
