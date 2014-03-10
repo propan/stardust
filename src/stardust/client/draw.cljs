@@ -87,7 +87,9 @@
 
 (extend-type DeathMatchScreen
   Drawable
-  (draw [{:keys [player fps ships]} context]
+  (draw [{:keys [player fps ships] :as state} context]
     (.clearRect context 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
     (fill-text context (str fps " FPS") 10 20 "14px Helvetica" "#FFFFFF")
-    (draw player context)))
+    (draw player context)
+    (doseq [ship ships]
+      (draw ship context))))

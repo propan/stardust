@@ -9,6 +9,7 @@
 
 (cljs.reader/register-tag-parser!  "stardust.models.DeathMatchScreen" stardust.models/map->DeathMatchScreen)
 (cljs.reader/register-tag-parser!  "stardust.models.Player" stardust.models/map->Player)
+(cljs.reader/register-tag-parser!  "stardust.models.Ship" stardust.models/map->Ship)
 
 (def ARROW_LEFT 37)
 (def ARROW_UP 38)
@@ -54,7 +55,7 @@
 (defn- safe-read-string
   [str]
   (try
-    (reader/read-string (reader/read-string str)) ;; TODO: WTF?  
+    (reader/read-string str)
     (catch :default e nil)))
 
 (defn websocket
