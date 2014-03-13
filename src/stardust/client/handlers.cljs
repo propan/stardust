@@ -3,7 +3,7 @@
             [cljs.core.async :refer [put!]]
             [stardust.client.draw :as d]
             [stardust.protocols :refer [Handler]]
-            [stardust.models :refer [DeathMatchScreen]]))
+            [stardust.models :as m :refer [ConnectionScreen DeathMatchScreen]]))
 
 (def context (.getContext (dom/get-element "open-space") "2d"))
 
@@ -34,10 +34,20 @@
 
 (defn handle-socket
   [{:keys [out-channel fps] :as state} [event data]]
-  (if (= event :message)
-    (merge data {:fps         fps
-                 :out-channel out-channel})
+  (case event
+    :message (merge data {:fps         fps
+                          :out-channel out-channel})
+    :closed  (m/connection-screen out-channel)
     state))
+
+(extend-type ConnectionScreen
+  Handler
+  (handle [state event]
+    (let [[source data] event]
+      (case source
+        :frame    (handle-frame state data)
+        :socket   (handle-socket state data)
+        state))))
 
 (extend-type DeathMatchScreen
   Handler
