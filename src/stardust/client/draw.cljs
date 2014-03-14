@@ -32,6 +32,21 @@
       (.rotate (* rotation C/RAD_FACTOR))
       (.drawImage (.-data image) (.-offset-x image) (.-offset-y image)))))
 
+(defn- draw-shield
+  [context immunity]
+  (when (pos? immunity)
+    (with-context [ctx context]
+      (doto ctx
+        (aset "strokeStyle" CC/SHIELD_COLOR)
+        (aset "shadowBlur"  CC/SHADOW_BLUR)
+        (aset "shadowColor" CC/SHIELD_COLOR)
+        (aset "lineWidth" 1.5)
+        (aset "globalAlpha" (/ immunity C/SPAWN_IMMUNITY_SECONDS))
+        (.beginPath)
+        (.arc 0 0 22 (* 2 Math/PI) false)
+        (.closePath)
+        (.stroke)))))
+
 ;;
 ;; Pre-generated images
 ;;
@@ -75,6 +90,18 @@
                   (generate-ship-image buffer (get CC/SHIP_COLORS type))))))
 
 ;;
+;;
+;;
+
+(defn- draw-ship
+  [context x y rotation immunity color]
+  (with-context [ctx context]
+    (doto ctx
+      (draw-cached-image (aget ship-images color) x y rotation)
+      (.translate x y)
+      (draw-shield immunity))))
+
+;;
 ;; Drawable Protocol
 ;;
 
@@ -84,14 +111,12 @@
 (extend-type Ship
   Drawable
   (draw [{:keys [x y rotation immunity color]} context]
-    (with-context [ctx context]
-      (draw-cached-image ctx (aget ship-images color) x y rotation))))
+    (draw-ship context x y rotation immunity color)))
 
 (extend-type Player
   Drawable
   (draw [{:keys [x y rotation immunity color]} context]
-    (with-context [ctx context]
-      (draw-cached-image ctx (aget ship-images color) x y rotation))))
+    (draw-ship context x y rotation immunity color)))
 
 (defn connecting-string
   []
