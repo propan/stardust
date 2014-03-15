@@ -8,6 +8,7 @@
             [stardust.utils :refer [round]]))
 
 (cljs.reader/register-tag-parser!  "stardust.models.DeathMatchScreen" stardust.models/map->DeathMatchScreen)
+(cljs.reader/register-tag-parser!  "stardust.models.ObjectPiece" stardust.models/map->ObjectPiece)
 (cljs.reader/register-tag-parser!  "stardust.models.Player" stardust.models/map->Player)
 (cljs.reader/register-tag-parser!  "stardust.models.Ship" stardust.models/map->Ship)
 
@@ -42,7 +43,7 @@
 
 (defn- animation-frame-loop
   [chan then time]
-  (put! chan [:frame (round (/ 1000 (- time then)))])
+  (put! chan [:frame (- time then)])
   (.requestAnimationFrame js/window #(animation-frame-loop chan time %)))
 
 (defn frames

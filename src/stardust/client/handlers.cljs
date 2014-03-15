@@ -2,8 +2,10 @@
   (:require [clojure.browser.dom :as dom]
             [cljs.core.async :refer [put!]]
             [stardust.client.draw :as d]
-            [stardust.protocols :refer [Handler]]
-            [stardust.models :as m :refer [ConnectionScreen DeathMatchScreen]]))
+            [stardust.models :as m :refer [ConnectionScreen DeathMatchScreen]]
+            [stardust.protocols :as p :refer [Handler]]
+            [stardust.tick]
+            [stardust.utils :as u]))
 
 (def context (.getContext (dom/get-element "open-space") "2d"))
 
@@ -12,9 +14,11 @@
   (update-in state [:player property] #(if (= % from) to %)))
 
 (defn- handle-frame
-  [state fps]
+  [state between]
   (d/draw state context)
-  (assoc state :fps fps))
+  (-> state
+      (assoc :fps (u/round (/ 1000 between)))
+      (p/tick (/ between 1000.0))))
 
 (defn- gs-handle-keyboard
   [state event]
@@ -33,10 +37,11 @@
   state)
 
 (defn handle-socket
-  [{:keys [out-channel fps] :as state} [event data]]
+  [{:keys [out-channel fps effects] :as state} [event data]]
   (case event
     :message (merge data {:fps         fps
-                          :out-channel out-channel})
+                          :out-channel out-channel
+                          :effects     (concat effects (:effects data))})
     :closed  (m/connection-screen out-channel)
     state))
 

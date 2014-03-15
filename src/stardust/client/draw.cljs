@@ -2,7 +2,7 @@
   (:require-macros [stardust.client.macros :refer [with-context]])
   (:require [stardust.constants :as C]
             [stardust.client.constants :as CC]
-            [stardust.models :refer [Player Ship ConnectionScreen DeathMatchScreen]]))
+            [stardust.models :refer [ObjectPiece Player Ship ConnectionScreen DeathMatchScreen]]))
 
 ;;
 ;; Helpers
@@ -43,7 +43,7 @@
         (aset "lineWidth" 1.5)
         (aset "globalAlpha" (/ immunity C/SPAWN_IMMUNITY_SECONDS))
         (.beginPath)
-        (.arc 0 0 22 (* 2 Math/PI) false)
+        (.arc 0 0 CC/SHIP_SHIELD_RADIUS (* 2 Math/PI) false)
         (.closePath)
         (.stroke)))))
 
@@ -86,8 +86,8 @@
 
 (def ship-images
   (let [buffer (.createElement js/document "canvas")]
-    (into-array (for [type (range 0 6)]
-                  (generate-ship-image buffer (get CC/SHIP_COLORS type))))))
+    (into-array (for [color (range 0 6)]
+                  (generate-ship-image buffer (get CC/SHIP_COLORS color))))))
 
 ;;
 ;;
@@ -107,6 +107,27 @@
 
 (defprotocol Drawable
   (draw [_ context]))
+
+(extend-type ObjectPiece
+  Drawable
+  (draw [{:keys [x y lx ly rx ry size rotation color]} context]
+    (with-context [ctx context]
+      (let [scale (* 1.5 size)
+            width (* 1.0 (/ 1.5 size))
+            color (get CC/SHIP_COLORS color)]
+        (doto ctx
+          (aset "shadowBlur" 15)
+          (aset "shadowColor" color)
+          (aset "lineWidth" width)
+          (aset "strokeStyle" color)
+          (.translate x y)
+          (.scale scale scale)
+          (.rotate (* rotation C/RAD_FACTOR))
+          (.beginPath)
+          (.moveTo lx ly)
+          (.lineTo rx ry)
+          (.closePath)
+          (.stroke))))))
 
 (extend-type Ship
   Drawable
@@ -133,9 +154,11 @@
 
 (extend-type DeathMatchScreen
   Drawable
-  (draw [{:keys [player fps ships] :as state} context]
+  (draw [{:keys [player fps ships effects] :as state} context]
     (.clearRect context 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
     (fill-text context (str fps " FPS") 10 20 "14px Helvetica" "#FFFFFF")
     (draw player context)
     (doseq [ship ships]
-      (draw ship context))))
+      (draw ship context))
+    (doseq [effect effects]
+      (draw effect context))))
