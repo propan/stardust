@@ -2,11 +2,19 @@
   (:require-macros [stardust.client.macros :refer [with-context]])
   (:require [stardust.constants :as C]
             [stardust.client.constants :as CC]
-            [stardust.models :refer [ObjectPiece Player Ship ConnectionScreen DeathMatchScreen]]))
+            [stardust.models :refer [Bullet ObjectPiece Player Ship ConnectionScreen DeathMatchScreen]]))
 
 ;;
 ;; Helpers
 ;;
+
+(defn- create-gradient
+  [ctx x y radius color]
+  (doto (.createRadialGradient ctx x y 0 x y radius)
+    (.addColorStop 0 "#FFFFFF")
+    (.addColorStop 0.4 "#FFFFFF")
+    (.addColorStop 0.4 color)
+    (.addColorStop 1.0 "#000000")))
 
 (defn- fill-text
   [context text x y font color]
@@ -89,6 +97,27 @@
     (set! (.-src image) (.toDataURL buffer "image/png"))
     (CachedImage. (- middle-x) (- middle-y) image)))
 
+(defn generate-particle-image
+  [buffer radius color]
+  (let [image-size (* 2 (+ radius CC/SHADOW_BLUR))
+        middle     (/ image-size 2)
+        image      (js/Image.)]
+    ;; resize buffer
+    (set! (.-width buffer) image-size)
+    (set! (.-height buffer) image-size)
+    (with-context [ctx (.getContext buffer "2d")]
+      (doto ctx
+        (aset "globalCompositeOperation" "lighter")
+        (aset "shadowBlur" C/SHADOW_BLUR)
+        (aset "shadowColor" radius)
+        (aset "fillStyle" (create-gradient ctx 0 0 radius color))
+        (.translate middle middle)
+        (.beginPath)
+        (.arc 0 0 radius (* 2 Math/PI) false)
+        (.fill)))
+    (set! (.-src image) (.toDataURL buffer "image/png"))
+    (CachedImage. (- middle) (- middle) image)))
+
 ;;
 ;; Cached images
 ;;
@@ -98,6 +127,8 @@
     (into-array (for [color (range 0 6)]
                   (generate-ship-image buffer (get CC/SHIP_COLORS color))))))
 
+(def bullet-image
+  (generate-particle-image (.createElement js/document "canvas") CC/BULLET_RADIUS CC/BULLET_COLOR))
 ;;
 ;;
 ;;
@@ -116,6 +147,11 @@
 
 (defprotocol Drawable
   (draw [_ context]))
+
+(extend-type Bullet
+  Drawable
+  (draw [{:keys [x y]} context]
+    (draw-cached-image context bullet-image x y 0)))
 
 (extend-type ObjectPiece
   Drawable
@@ -160,9 +196,11 @@
 
 (extend-type DeathMatchScreen
   Drawable
-  (draw [{:keys [player fps ships effects] :as state} context]
+  (draw [{:keys [player fps ships effects bullets] :as state} context]
     (.clearRect context 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
     (fill-text context (str fps " FPS") 10 20 "14px Helvetica" "#FFFFFF")
+    (doseq [bullet bullets]
+      (draw bullet context))
     (draw player context)
     (doseq [ship ships]
       (draw ship context))

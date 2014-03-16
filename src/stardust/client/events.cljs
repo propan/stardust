@@ -8,9 +8,12 @@
             [stardust.utils :refer [round]]))
 
 (cljs.reader/register-tag-parser!  "stardust.models.DeathMatchScreen" stardust.models/map->DeathMatchScreen)
+(cljs.reader/register-tag-parser!  "stardust.models.Bullet" stardust.models/map->Bullet)
 (cljs.reader/register-tag-parser!  "stardust.models.ObjectPiece" stardust.models/map->ObjectPiece)
 (cljs.reader/register-tag-parser!  "stardust.models.Player" stardust.models/map->Player)
 (cljs.reader/register-tag-parser!  "stardust.models.Ship" stardust.models/map->Ship)
+
+(def SPACE 32)
 
 (def ARROW_LEFT 37)
 (def ARROW_UP 38)
@@ -20,12 +23,14 @@
 (def KEY_DOWN_EVENTS
   {ARROW_LEFT  :arrow-left-down
    ARROW_UP    :arrow-up-down
-   ARROW_RIGHT :arrow-right-down})
+   ARROW_RIGHT :arrow-right-down
+   SPACE       :space-down})
 
 (def KEY_UP_EVENTS
   {ARROW_LEFT  :arrow-left-up
    ARROW_UP    :arrow-up-up
-   ARROW_RIGHT :arrow-right-up})
+   ARROW_RIGHT :arrow-right-up
+   SPACE       :space-up})
 
 (defn- keyboard-event
   [ch mapping e]
