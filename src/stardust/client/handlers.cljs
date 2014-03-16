@@ -20,17 +20,6 @@
       (assoc :fps (u/round (/ 1000 between)))
       (p/tick (/ between 1000.0))))
 
-(defn- gs-handle-keyboard
-  [state event]
-  (case event
-    :arrow-left-down  (change-ship-state state :rotate :none :left)
-    :arrow-left-up    (change-ship-state state :rotate :left :none)
-    :arrow-right-down (change-ship-state state :rotate :none :right)
-    :arrow-right-up   (change-ship-state state :rotate :right :none)
-    :arrow-up-down    (change-ship-state state :accelerate false true)
-    :arrow-up-up      (change-ship-state state :accelerate true false)
-    state))
-
 (defn- dms-handle-keyboard
   [state event]
   (put! (:out-channel state) event)

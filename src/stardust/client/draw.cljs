@@ -32,6 +32,15 @@
       (.rotate (* rotation C/RAD_FACTOR))
       (.drawImage (.-data image) (.-offset-x image) (.-offset-y image)))))
 
+(defn- draw-path
+  [context path]
+  (when-let [[x y] (first path)]
+    (.beginPath context)
+    (.moveTo context x y)
+    (doseq [[x y] (rest path)]
+      (.lineTo context x y))
+    (.closePath context)))
+
 (defn- draw-shield
   [context immunity]
   (when (pos? immunity)
@@ -110,7 +119,7 @@
 
 (extend-type ObjectPiece
   Drawable
-  (draw [{:keys [x y lx ly rx ry size rotation color]} context]
+  (draw [{:keys [x y h size rotation color path]} context]
     (with-context [ctx context]
       (let [scale (* 1.5 size)
             width (* 1.0 (/ 1.5 size))
@@ -123,21 +132,18 @@
           (.translate x y)
           (.scale scale scale)
           (.rotate (* rotation C/RAD_FACTOR))
-          (.beginPath)
-          (.moveTo lx ly)
-          (.lineTo rx ry)
-          (.closePath)
+          (draw-path path)
           (.stroke))))))
 
 (extend-type Ship
   Drawable
-  (draw [{:keys [x y rotation immunity color]} context]
-    (draw-ship context x y rotation immunity color)))
+  (draw [{:keys [x y h immunity color]} context]
+    (draw-ship context x y h immunity color)))
 
 (extend-type Player
   Drawable
-  (draw [{:keys [x y rotation immunity color]} context]
-    (draw-ship context x y rotation immunity color)))
+  (draw [{:keys [x y h immunity color]} context]
+    (draw-ship context x y h immunity color)))
 
 (defn connecting-string
   []
