@@ -14,4 +14,5 @@
 
 (def BULLET_RADIUS 5)
 
-(def BULLET_COLOR "#00FF00")
+(def BULLET_COLOR "#20FF20")
+

@@ -118,6 +118,26 @@
     (set! (.-src image) (.toDataURL buffer "image/png"))
     (CachedImage. (- middle) (- middle) image)))
 
+(defn- generate-bullet-image
+  [buffer color]
+  (let [image-width  (+ 2 (* 2 CC/SHADOW_BLUR))
+        image-height (+ 5 (* 2 CC/SHADOW_BLUR))
+        middle-x     (/ image-width 2)
+        middle-y     (/ image-width 2)
+        image        (js/Image.)]
+    (set! (.-width buffer) image-width)
+    (set! (.-height buffer) image-height)
+    (with-context [ctx (.getContext buffer "2d")]
+      (doto ctx
+        (aset "shadowBlur" CC/SHADOW_BLUR)
+        (aset "shadowColor" color)
+        (aset "fillStyle" color)
+        (.translate middle-x middle-y)
+        (draw-path [[0 5] [2 0] [0 -5] [-2 0]])
+        (.fill)))
+    (set! (.-src image) (.toDataURL buffer "image/png"))
+    (CachedImage. (- middle-x) (- middle-y) image)))
+
 ;;
 ;; Cached images
 ;;
@@ -128,7 +148,7 @@
                   (generate-ship-image buffer (get CC/SHIP_COLORS color))))))
 
 (def bullet-image
-  (generate-particle-image (.createElement js/document "canvas") CC/BULLET_RADIUS CC/BULLET_COLOR))
+  (generate-bullet-image (.createElement js/document "canvas") CC/BULLET_COLOR))
 ;;
 ;;
 ;;
@@ -150,8 +170,8 @@
 
 (extend-type Bullet
   Drawable
-  (draw [{:keys [x y]} context]
-    (draw-cached-image context bullet-image x y 0)))
+  (draw [{:keys [x y h]} context]
+    (draw-cached-image context bullet-image x y h)))
 
 (extend-type ObjectPiece
   Drawable
