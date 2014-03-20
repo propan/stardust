@@ -14,3 +14,4 @@
 
 (def BULLET_COLOR "#20FF20")
 
+(def PARTICLE_COLOR "#FFB236")

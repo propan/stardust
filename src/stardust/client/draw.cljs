@@ -2,7 +2,7 @@
   (:require-macros [stardust.client.macros :refer [with-context]])
   (:require [stardust.constants :as C]
             [stardust.client.constants :as CC]
-            [stardust.models :refer [Bullet ObjectPiece Player Ship ConnectionScreen DeathMatchScreen]]))
+            [stardust.models :refer [Bullet ObjectPiece Particle Player Ship ConnectionScreen DeathMatchScreen]]))
 
 ;;
 ;; Helpers
@@ -147,6 +147,11 @@
     (into-array (for [color (range 0 6)]
                   (generate-ship-image buffer (get CC/SHIP_COLORS color))))))
 
+(def particle-images
+  (let [buffer (.createElement js/document "canvas")]
+    (into-array (for [radius (range 1 6)]
+                  (generate-particle-image buffer radius CC/PARTICLE_COLOR)))))
+
 (def bullet-image
   (generate-bullet-image (.createElement js/document "canvas") CC/BULLET_COLOR))
 ;;
@@ -190,6 +195,11 @@
           (.rotate (* rotation C/RAD_FACTOR))
           (draw-path path)
           (.stroke))))))
+
+(extend-type Particle
+  Drawable
+  (draw [{:keys [x y r]} context]
+    (draw-cached-image context (aget particle-images (dec r)) x y 0)))
 
 (extend-type Ship
   Drawable

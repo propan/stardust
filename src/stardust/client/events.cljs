@@ -10,6 +10,7 @@
 (cljs.reader/register-tag-parser!  "stardust.models.DeathMatchScreen" stardust.models/map->DeathMatchScreen)
 (cljs.reader/register-tag-parser!  "stardust.models.Bullet" stardust.models/map->Bullet)
 (cljs.reader/register-tag-parser!  "stardust.models.ObjectPiece" stardust.models/map->ObjectPiece)
+(cljs.reader/register-tag-parser!  "stardust.models.Particle" stardust.models/map->Particle)
 (cljs.reader/register-tag-parser!  "stardust.models.Player" stardust.models/map->Player)
 (cljs.reader/register-tag-parser!  "stardust.models.Ship" stardust.models/map->Ship)
 
