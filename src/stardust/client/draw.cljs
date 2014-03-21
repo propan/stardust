@@ -2,7 +2,8 @@
   (:require-macros [stardust.client.macros :refer [with-context]])
   (:require [stardust.constants :as C]
             [stardust.client.constants :as CC]
-            [stardust.models :refer [Bullet ObjectPiece Particle Player Ship ConnectionScreen DeathMatchScreen]]))
+            [stardust.models :refer [Bullet ObjectPiece Particle Player Ship ConnectionScreen DeathMatchScreen]]
+            [stardust.utils :as u]))
 
 ;;
 ;; Helpers
@@ -57,12 +58,48 @@
         (aset "strokeStyle" CC/SHIELD_COLOR)
         (aset "shadowBlur"  CC/SHADOW_BLUR)
         (aset "shadowColor" CC/SHIELD_COLOR)
-        (aset "lineWidth" 1.5)
+        (aset "lineWidth"   1.5)
         (aset "globalAlpha" (/ immunity C/SPAWN_IMMUNITY_SECONDS))
         (.beginPath)
         (.arc 0 0 CC/SHIP_SHIELD_RADIUS (* 2 Math/PI) false)
         (.closePath)
         (.stroke)))))
+
+(defn- fill-rect
+  [context x y w h color alfa]
+  (with-context [ctx context]
+    (doto ctx
+      (aset"fillStyle" color)
+      (aset "globalAlpha" alfa)
+      (.beginPath)
+      (.rect x y w h)
+      (.closePath)
+      (.fill))))
+
+(defn- stroke-rect
+  [context x y w h color]
+  (with-context [ctx context]
+    (doto ctx
+      (aset"strokeStyle" color)
+      (.beginPath)
+      (.rect x y w h)
+      (.closePath)
+      (.stroke))))
+
+(defn- draw-life-bar
+  [context life]
+  (with-context [ctx context]
+    (let [health (/ life C/MAX_PLAYER_LIFE)
+          color  (cond
+                  (< health 0.33) CC/LIFE_DANGER_COLOR
+                  (< health 0.66) CC/LIFE_WARN_COLOR
+                  :else           CC/LIFE_OK_COLOR)
+          status (str (u/round (/ health 0.01)) "%")]
+      (doto ctx
+        (.translate 15 30)
+        (stroke-rect 0 -15 150 15 color)
+        (fill-rect 0 -15 (* 150 health) 14 color 0.25)
+        (fill-text status 60 -4 "10px Helvetica" "#FFFFFF")))))
 
 ;;
 ;; Pre-generated images
@@ -208,8 +245,10 @@
 
 (extend-type Player
   Drawable
-  (draw [{:keys [x y h immunity color]} context]
-    (draw-ship context x y h immunity color)))
+  (draw [{:keys [x y h immunity color life]} context]
+    (doto context
+      (draw-ship x y h immunity color)
+      (draw-life-bar life))))
 
 (defn connecting-string
   []
@@ -221,14 +260,13 @@
   (draw [{:keys [fps] :as state} context]
     (doto context
       (.clearRect 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
-      (fill-text (str fps " FPS") 10 20 "14px Helvetica" "#FFFFFF")
       (fill-text (connecting-string) (- (/ CC/SCREEN_WIDTH 2) 110) (/ CC/SCREEN_HEIGHT 2) "34px Rammetto One" "#FFFFFF"))))
 
 (extend-type DeathMatchScreen
   Drawable
   (draw [{:keys [player fps ships effects bullets] :as state} context]
     (.clearRect context 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
-    (fill-text context (str fps " FPS") 10 20 "14px Helvetica" "#FFFFFF")
+    (fill-text context (str fps " FPS") (- CC/SCREEN_WIDTH 85) 25 "14px Helvetica" "#FFFFFF")
     (doseq [bullet bullets]
       (draw bullet context))
     (draw player context)
