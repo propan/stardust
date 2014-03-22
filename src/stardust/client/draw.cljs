@@ -134,33 +134,14 @@
     (set! (.-src image) (.toDataURL buffer "image/png"))
     (CachedImage. (- middle-x) (- middle-y) image)))
 
-(defn generate-particle-image
-  [buffer radius color]
-  (let [image-size (* 2 (+ radius CC/SHADOW_BLUR))
-        middle     (/ image-size 2)
-        image      (js/Image.)]
-    ;; resize buffer
-    (set! (.-width buffer) image-size)
-    (set! (.-height buffer) image-size)
-    (with-context [ctx (.getContext buffer "2d")]
-      (doto ctx
-        (aset "globalCompositeOperation" "lighter")
-        (aset "shadowBlur" C/SHADOW_BLUR)
-        (aset "shadowColor" radius)
-        (aset "fillStyle" (create-gradient ctx 0 0 radius color))
-        (.translate middle middle)
-        (.beginPath)
-        (.arc 0 0 radius (* 2 Math/PI) false)
-        (.fill)))
-    (set! (.-src image) (.toDataURL buffer "image/png"))
-    (CachedImage. (- middle) (- middle) image)))
-
-(defn- generate-bullet-image
-  [buffer color]
-  (let [image-width  (+ 2 (* 2 CC/SHADOW_BLUR))
-        image-height (+ 5 (* 2 CC/SHADOW_BLUR))
-        middle-x     (/ image-width 2)
-        middle-y     (/ image-width 2)
+(defn- generate-particle-image
+  [buffer size color]
+  (let [x-offset     size
+        y-offset     (+ 3 size)
+        middle-x     (+ x-offset CC/SHADOW_BLUR)
+        middle-y     (+ y-offset CC/SHADOW_BLUR)
+        image-width  (* 2 middle-x)
+        image-height (* 2 middle-y)
         image        (js/Image.)]
     (set! (.-width buffer) image-width)
     (set! (.-height buffer) image-height)
@@ -170,7 +151,7 @@
         (aset "shadowColor" color)
         (aset "fillStyle" color)
         (.translate middle-x middle-y)
-        (draw-path [[0 5] [2 0] [0 -5] [-2 0]])
+        (draw-path [[0 y-offset] [x-offset 0] [0 (- y-offset)] [(- x-offset) 0]])
         (.fill)))
     (set! (.-src image) (.toDataURL buffer "image/png"))
     (CachedImage. (- middle-x) (- middle-y) image)))
@@ -186,11 +167,11 @@
 
 (def particle-images
   (let [buffer (.createElement js/document "canvas")]
-    (into-array (for [radius (range 1 6)]
-                  (generate-particle-image buffer radius CC/PARTICLE_COLOR)))))
+    (into-array (for [size (range 1 3)]
+                  (generate-particle-image buffer size CC/PARTICLE_COLOR)))))
 
 (def bullet-image
-  (generate-bullet-image (.createElement js/document "canvas") CC/BULLET_COLOR))
+  (generate-particle-image (.createElement js/document "canvas") 2 CC/BULLET_COLOR))
 ;;
 ;;
 ;;
@@ -235,8 +216,8 @@
 
 (extend-type Particle
   Drawable
-  (draw [{:keys [x y r]} context]
-    (draw-cached-image context (aget particle-images (dec r)) x y 0)))
+  (draw [{:keys [x y h s]} context]
+    (draw-cached-image context (aget particle-images (dec s)) x y h)))
 
 (extend-type Ship
   Drawable
