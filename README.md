@@ -1,4 +1,4 @@
-# STARDUST
+# STARDUST [CLIENT]
 
 a client for multiplayer version of Asteroids written in ClojureScript
 
