@@ -1,6 +1,7 @@
 (ns stardust.client.draw
   (:require-macros [stardust.client.macros :refer [with-context]])
-  (:require [stardust.constants :as C]
+  (:require [goog.string.format]
+            [stardust.constants :as C]
             [stardust.client.constants :as CC]
             [stardust.models :refer [Bullet ObjectPiece Particle Player Ship ConnectionScreen DeathMatchScreen]]
             [stardust.utils :as u]))
@@ -100,6 +101,20 @@
         (stroke-rect 0 -15 150 15 color)
         (fill-rect 0 -15 (* 150 health) 14 color 0.25)
         (fill-text status 60 -4 "10px Helvetica" "#FFFFFF")))))
+
+(defn- draw-score-board
+  [context player ships score]
+  (with-context [ctx context]
+    (.translate ctx (- CC/SCREEN_WIDTH 55) 5)
+    (loop [score (sort-by second > score)
+           index 0]
+      (when-let [[cid points] (first score)]
+        (let [color (or (get-in ships [cid :color])
+                        (:color player))
+              color (get CC/SHIP_COLORS color)]
+          (fill-rect ctx 10 (+ 5 (* index 15)) 11 11 color 1)
+          (fill-text ctx (goog.string.format "%3d" points) 30 (+ 15 (* index 15)) "14px Helvetica" "#FFFFFF")
+          (recur (rest score) (inc index)))))))
 
 ;;
 ;; Pre-generated images
@@ -245,13 +260,14 @@
 
 (extend-type DeathMatchScreen
   Drawable
-  (draw [{:keys [player fps ships effects bullets] :as state} context]
+  (draw [{:keys [player fps ships effects bullets score] :as state} context]
     (.clearRect context 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
-    (fill-text context (str fps " FPS") (- CC/SCREEN_WIDTH 85) 25 "14px Helvetica" "#FFFFFF")
+    (fill-text context (str fps " FPS") (- CC/SCREEN_WIDTH 80) (- CC/SCREEN_HEIGHT 15) "14px Helvetica" "#FFFFFF")
     (doseq [bullet bullets]
       (draw bullet context))
     (draw player context)
-    (doseq [ship ships]
+    (doseq [[cid ship] ships]
       (draw ship context))
     (doseq [effect effects]
-      (draw effect context))))
+      (draw effect context))
+    (draw-score-board context player ships score)))

@@ -30,7 +30,8 @@
   (case event
     :message (merge data {:fps         fps
                           :out-channel out-channel
-                          :effects     (concat effects (:effects data))})
+                          :effects     (concat effects (:effects data))
+                          :score       (:score data)})
     :closed  (m/connection-screen out-channel)
     state))
 
