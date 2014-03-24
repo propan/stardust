@@ -3,7 +3,7 @@
   (:require [goog.string.format]
             [stardust.constants :as C]
             [stardust.client.constants :as CC]
-            [stardust.models :refer [Bullet ObjectPiece Particle Player Ship ConnectionScreen DeathMatchScreen]]
+            [stardust.models :refer [Bullet ObjectPiece Particle Player ConnectionScreen DeathMatchScreen]]
             [stardust.utils :as u]))
 
 ;;
@@ -103,14 +103,13 @@
         (fill-text status 60 -4 "10px Helvetica" "#FFFFFF")))))
 
 (defn- draw-score-board
-  [context player ships score]
+  [context players score]
   (with-context [ctx context]
     (.translate ctx (- CC/SCREEN_WIDTH 55) 5)
     (loop [score (sort-by second > score)
            index 0]
       (when-let [[cid points] (first score)]
-        (let [color (or (get-in ships [cid :color])
-                        (:color player))
+        (let [color (get-in players [cid :color])
               color (get CC/SHIP_COLORS color)]
           (fill-rect ctx 10 (+ 5 (* index 15)) 11 11 color 1)
           (fill-text ctx (goog.string.format "%3d" points) 30 (+ 15 (* index 15)) "14px Helvetica" "#FFFFFF")
@@ -187,17 +186,6 @@
 
 (def bullet-image
   (generate-particle-image (.createElement js/document "canvas") 2 CC/BULLET_COLOR))
-;;
-;;
-;;
-
-(defn- draw-ship
-  [context x y rotation immunity color]
-  (with-context [ctx context]
-    (doto ctx
-      (draw-cached-image (aget ship-images color) x y rotation)
-      (.translate x y)
-      (draw-shield immunity))))
 
 ;;
 ;; Drawable Protocol
@@ -234,17 +222,14 @@
   (draw [{:keys [x y h s]} context]
     (draw-cached-image context (aget particle-images (dec s)) x y h)))
 
-(extend-type Ship
-  Drawable
-  (draw [{:keys [x y h immunity color]} context]
-    (draw-ship context x y h immunity color)))
-
 (extend-type Player
   Drawable
   (draw [{:keys [x y h immunity color life]} context]
-    (doto context
-      (draw-ship x y h immunity color)
-      (draw-life-bar life))))
+    (with-context [ctx context]
+      (doto ctx
+        (draw-cached-image (aget ship-images color) x y h)
+        (.translate x y)
+        (draw-shield immunity)))))
 
 (defn connecting-string
   []
@@ -260,14 +245,14 @@
 
 (extend-type DeathMatchScreen
   Drawable
-  (draw [{:keys [player fps ships effects bullets score] :as state} context]
+  (draw [{:keys [cid players fps effects bullets score] :as state} context]
     (.clearRect context 0 0 CC/SCREEN_WIDTH CC/SCREEN_HEIGHT)
     (fill-text context (str fps " FPS") (- CC/SCREEN_WIDTH 80) (- CC/SCREEN_HEIGHT 15) "14px Helvetica" "#FFFFFF")
     (doseq [bullet bullets]
       (draw bullet context))
-    (draw player context)
-    (doseq [[cid ship] ships]
-      (draw ship context))
+    (doseq [[cid player] players]
+      (draw player context))
     (doseq [effect effects]
       (draw effect context))
-    (draw-score-board context player ships score)))
+    (draw-life-bar context (get-in players [cid :life]))
+    (draw-score-board context players score)))

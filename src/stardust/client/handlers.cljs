@@ -25,14 +25,47 @@
   (put! (:out-channel state) event)
   state)
 
+(defn- merge-state
+  [{:keys [out-channel fps effects]} data]
+  (merge data {:fps         fps
+               :out-channel out-channel
+               :effects     (or effects [])}))
+
+(defn- player-join
+  [state {:keys [client-id] :as player}]
+  (-> state
+      (assoc-in  [:players client-id] player)
+      (assoc-in  [:score client-id] 0)))
+
+(defn- player-leave
+  [state client-id]
+  (-> state
+      (update-in [:players] dissoc client-id)
+      (update-in [:score]   dissoc client-id)))
+
+(defn- update-player
+  [state [client-id property value]]
+  (assoc-in state [:players client-id property] value))
+
+(defn- spawn-player
+  [state [client-id player]]
+  (assoc-in state [:players client-id] player))
+
+(defn- handle-socket-message
+  [state [source data]]
+  (case source
+    :state    (merge-state   state data)
+    :join     (player-join   state data)
+    :leave    (player-leave  state data)
+    :spawn    (spawn-player  state data)
+    :property (update-player state data)
+    state))
+
 (defn handle-socket
-  [{:keys [out-channel fps effects] :as state} [event data]]
+  [state [event data]]
   (case event
-    :message (merge data {:fps         fps
-                          :out-channel out-channel
-                          :effects     (concat effects (:effects data))
-                          :score       (:score data)})
-    :closed  (m/connection-screen out-channel)
+    :message (handle-socket-message state data)
+    :closed  (m/connection-screen (:out-channel state))
     state))
 
 (extend-type ConnectionScreen
