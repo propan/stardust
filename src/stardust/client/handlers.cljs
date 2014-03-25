@@ -44,21 +44,17 @@
       (update-in [:score]   dissoc client-id)))
 
 (defn- update-player
-  [state [client-id property value]]
-  (assoc-in state [:players client-id property] value))
-
-(defn- spawn-player
-  [state [client-id player]]
+  [state {:keys [client-id] :as player}]
   (assoc-in state [:players client-id] player))
 
 (defn- handle-socket-message
   [state [source data]]
   (case source
     :state    (merge-state   state data)
-    :join     (player-join   state data)
-    :leave    (player-leave  state data)
-    :spawn    (spawn-player  state data)
-    :property (update-player state data)
+    :join     (player-join   state data) ;; TODO: animate
+    :leave    (player-leave  state data) ;; TODO: animate
+    :spawn    (update-player state data) ;; TODO: animate ship crash + respawn
+    :player   (update-player state data)
     state))
 
 (defn handle-socket
