@@ -2,6 +2,7 @@
   (:require [clojure.browser.dom :as dom]
             [cljs.core.async :refer [put!]]
             [stardust.client.draw :as d]
+            [stardust.client.effects :as e]
             [stardust.models :as m :refer [ConnectionScreen DeathMatchScreen]]
             [stardust.protocols :as p :refer [Handler]]
             [stardust.tick]
@@ -47,14 +48,21 @@
   [state {:keys [client-id] :as player}]
   (assoc-in state [:players client-id] player))
 
+(defn- spawn-player
+  [state {:keys [client-id] :as player}]
+  (let [destroyed (get-in state [:players client-id])]
+    (-> state
+        (assoc-in [:players client-id] player)
+        (update-in [:effects] into (e/create-ship-explosion-effect destroyed)))))
+
 (defn- handle-socket-message
   [state [source data]]
   (case source
-    :state    (merge-state   state data)
-    :join     (player-join   state data) ;; TODO: animate
-    :leave    (player-leave  state data) ;; TODO: animate
-    :spawn    (update-player state data) ;; TODO: animate ship crash + respawn
-    :player   (update-player state data)
+    :state  (merge-state   state data)
+    :join   (player-join   state data)
+    :leave  (player-leave  state data)
+    :spawn  (spawn-player  state data)
+    :player (update-player state data)
     state))
 
 (defn handle-socket
@@ -69,8 +77,8 @@
   (handle [state event]
     (let [[source data] event]
       (case source
-        :frame    (handle-frame state data)
-        :socket   (handle-socket state data)
+        :frame  (handle-frame state data)
+        :socket (handle-socket state data)
         state))))
 
 (extend-type DeathMatchScreen
