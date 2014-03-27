@@ -55,6 +55,14 @@
         (assoc-in [:players client-id] player)
         (update-in [:effects] into (e/create-ship-explosion-effect destroyed)))))
 
+(defn- handle-hit
+  [state bullet]
+  (update-in state [:effects] into (e/create-hit-effect bullet)))
+
+(defn- update-score
+  [state [player-id points]]
+  (assoc-in state [:score player-id] points))
+
 (defn- handle-socket-message
   [state [source data]]
   (case source
@@ -63,6 +71,8 @@
     :leave  (player-leave  state data)
     :spawn  (spawn-player  state data)
     :player (update-player state data)
+    :hit    (handle-hit    state data)
+    :score  (update-score  state data)
     state))
 
 (defn handle-socket
