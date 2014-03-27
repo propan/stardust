@@ -4,13 +4,8 @@
 }
 
 #open-space {
-    margin: auto;
     display: block;
     background-color: #000000;
     border: 1px solid #999;
-    position: relative;
-    top: 50%;
-    -webkit-transform: translateY(-50%);
-    -ms-transform: translateY(-50%);
-    transform: translateY(-50%);
+    margin: 20px auto;
 }
